@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/resource.h>
 
 #define TAG_MASK 0xFF
 #define TAG_SHIFT 56
@@ -9,6 +10,8 @@
 #define ALIGN_HEAP 8
 
 extern void _B_main();
+
+char* _bal_stack_guard;
 
 typedef char *TaggedPtr;
 
@@ -54,7 +57,8 @@ const char *panicMessages[] = {
     0,
     "arithmetic overflow",
     "divide by zero",
-    "bad type cast"
+    "bad type cast",
+    "stack overflow"
 };
 
 void _bal_panic(int64_t code) {
@@ -71,7 +75,21 @@ char *_bal_alloc(int64_t nBytes) {
     abort();
 }
 
+void set_stack_guard() {
+  struct rlimit lim;
+  getrlimit(RLIMIT_STACK, &lim);
+//   printf("lim: %d / %d\n", (int)lim.rlim_cur, (int)lim.rlim_max);
+  int a = 2;
+  printf("%p\n", &a);
+  char* _bal_stack_limit = (char *)&a - lim.rlim_cur;
+  printf("%p\n", _bal_stack_limit);
+  _bal_stack_guard = _bal_stack_limit + 1000000; // 1kB guard at the bottom of stack
+  printf("%p\n", _bal_stack_guard);
+}
+
+
 int main() {
+    set_stack_guard();
     _B_main();
     return 0;
 } 

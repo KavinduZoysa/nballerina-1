@@ -119,6 +119,9 @@ class Scaffold {
     }
 
     function address(bir:Register r) returns llvm:PointerValue => self.addresses[r.number];
+
+    // TODO : check the lenght
+    function getLastAlloca() returns llvm:PointerValue => self.addresses[self.addresses.length() - 1];
        
     function basicBlock(int label) returns llvm:BasicBlock  => self.blocks[label];
 
@@ -181,24 +184,41 @@ function buildModule(bir:Module mod, llvm:Context context) returns llvm:Module|B
     }  
     llvm:Builder builder = context.createBuilder();
     ImportedFunctionTable importedFunctions = table [];
+    llvm:PointerValue stackGuard =  llMod.addGlobal(LLVM_TAGGED_PTR,  "_bal_stack_guard");
     foreach int i in 0 ..< functionDefns.length() {
         bir:FunctionCode code = check mod.generateFunctionCode(i);
         check bir:verifyFunctionCode(mod, functionDefns[i], code);
         Scaffold scaffold = check new(llMod, llFuncs[i], llFuncMap, importedFunctions, builder, functionDefns[i], code);
+
+        // llvm:PointerValue bitCast = builder.bitCast(scaffold.getLastAlloca(), LLVM_TAGGED_PTR);
+        // llvm:Value load = builder.load(stackGuard);
+        llvm:Value isStackOverflow = builder.iCmp("slt", builder.bitCast(scaffold.getLastAlloca(), LLVM_TAGGED_PTR), builder.load(stackGuard));
+        llvm:BasicBlock overflowBlock = scaffold.addBasicBlock();
+        llvm:BasicBlock continueBlock = scaffold.addBasicBlock();
+        builder.condBr(isStackOverflow, overflowBlock, continueBlock);
+        builder.positionAtEnd(overflowBlock);
+        _ = builder.call(buildRuntimeFunctionDecl(scaffold, "panic", panicFunctionType), [llvm:constInt(LLVM_INT, 4)]);
+        builder.unreachable();
+        builder.positionAtEnd(continueBlock);
+
         check buildFunctionBody(builder, scaffold, code);
     }
     return llMod;
 }
 
 function buildFunctionBody(llvm:Builder builder, Scaffold scaffold, bir:FunctionCode code) returns BuildError? {
+    int i = 0;
     foreach var b in code.blocks {
+        if (i != 0) {
+            builder.positionAtEnd(scaffold.basicBlock(b.label));
+        }
         check buildBasicBlock(builder, scaffold, b);
+        i = i + 1;
     }
 }
 
 function buildBasicBlock(llvm:Builder builder, Scaffold scaffold, bir:BasicBlock block) returns BuildError? {
     scaffold.setBasicBlock(block);
-    builder.positionAtEnd(scaffold.basicBlock(block.label));
     foreach var insn in block.insns {
         if insn is bir:IntArithmeticBinaryInsn {
             buildArithmeticBinary(builder, scaffold, insn);
@@ -346,12 +366,12 @@ function buildArithmeticBinary(llvm:Builder builder, Scaffold scaffold, bir:IntA
         llvm:Value resultWithOverflow = <llvm:Value>builder.call(intrinsicFunction, [lhs, rhs]);
         llvm:BasicBlock continueBlock = scaffold.addBasicBlock();
         llvm:BasicBlock overflowBlock = scaffold.addBasicBlock();
-        builder.condBr(builder.extractValue(resultWithOverflow, 1), overflowBlock, continueBlock);
-        builder.positionAtEnd(overflowBlock);
-        builder.store(llvm:constInt(LLVM_INT, PANIC_OVERFLOW), scaffold.panicAddress());
-        builder.br(scaffold.getOnPanic());
-        builder.positionAtEnd(continueBlock);
-        result = builder.extractValue(resultWithOverflow, 0);
+        builder.condBr(builder.extractValue(resultWithOverflow, 1), overflowBlock, continueBlock); // br i1 %_7, label %L3, label %L2
+        builder.positionAtEnd(overflowBlock); // L3
+        builder.store(llvm:constInt(LLVM_INT, PANIC_OVERFLOW), scaffold.panicAddress()); // store i64 1, i64* %_4
+        builder.br(scaffold.getOnPanic()); // br label %L1
+        builder.positionAtEnd(continueBlock); // L2
+        result = builder.extractValue(resultWithOverflow, 0); // %_8 = extractvalue {i64, i1} %_6, 0
     }
     else {
         llvm:BasicBlock zeroDivisorBlock = scaffold.addBasicBlock();
