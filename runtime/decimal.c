@@ -1,3 +1,5 @@
+#include <math.h>
+#include <float.h>
 #include "balrt.h"
 #include "third-party/decNumber/decQuad.h"
 
@@ -127,6 +129,22 @@ TaggedPtr _bal_decimal_neg(TaggedPtr tp) {
     decQuad d;
     decQuadCopyNegate(&d, dq);
     return createDecimal(&d);
+}
+
+double _bal_decimal_to_float(TaggedPtr tp) {
+    char dblStr[DECQUAD_String];
+    decQuadToString(taggedToDecQuad(tp), dblStr);
+    double dbl;
+    // It is garanteed that dblStr has the correct format,
+    // because decQuadToString returns scientific notation.
+    // Therefore it is not needed to handle the EOF.
+    sscanf(dblStr, "%lf", &dbl);
+
+    int infStatus = isinf(dbl);
+    if (infStatus == 0) {
+        return dbl;
+    }
+    return infStatus == 1 ? DBL_MAX : -DBL_MAX;
 }
 
 TaggedPtr _bal_decimal_const(const char *decString) {
