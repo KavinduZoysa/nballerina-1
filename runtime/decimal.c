@@ -1,3 +1,5 @@
+#include <math.h>
+#include <float.h>
 #include "balrt.h"
 #include "third-party/decNumber/decQuad.h"
 
@@ -105,6 +107,30 @@ TaggedPtrPanicCode finish(decQuad *dq, decContext *cx) {
         result.ptr = createDecimal(dq);
     }
     return result;
+}
+
+double _bal_decimal_to_float(TaggedPtr tp) {
+    char dblStr[DECQUAD_String];
+    const decQuad *d = taggedToDecQuad(tp);
+    decQuadToString(d, dblStr);
+    double dbl;
+    // It is garanteed that dblStr has the correct format,
+    // because decQuadToString returns scientific notation.
+    // Therefore it is not needed to handle the EOF.
+    sscanf(dblStr, "%lf", &dbl);
+    printf("dblStr : %s\n", dblStr);
+    printf("dbl1 : %lf\n", dbl);
+    printf("dbl2 : %e\n", dbl);
+
+    printf("-DBL_MAX : %lf\n", -DBL_MAX);
+    printf("-DBL_MAX : %e\n", -DBL_MAX);
+    int infStatus = isinf(dbl);
+    printf("infStatus : %d\n", infStatus);
+    if (infStatus == 0) {
+        return dbl;
+    }
+    return decQuadClass(d) == DEC_CLASS_POS_NORMAL ? DBL_MAX : -DBL_MAX;
+    // return infStatus == 1 ? DBL_MAX : -DBL_MAX;
 }
 
 TaggedPtr _bal_decimal_const(const char *decString) {

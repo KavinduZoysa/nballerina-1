@@ -1,5 +1,6 @@
 #include <string.h>
 #include <assert.h>
+#include <float.h>
 #include "../balrt.h"
 #include "../hash.h"
 #include "../third-party/decNumber/decQuad.h"
@@ -135,10 +136,56 @@ void testDiv() {
     genAndValidateDecDiv("9.999999999999999999999999999999999E-6001", "0.5E143", "2.000000000000000000000000000000000E-6143", 0);
 }
 
+void validatDecToFloat(const char *decStr, double val) {
+    assert(_bal_decimal_to_float(_bal_decimal_const(decStr)) == val);
+}
+
+void testDecToFloat() {
+    assert(_bal_decimal_to_float(_bal_decimal_const("1")) == 1);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1.000000000000000000000000000000000")) == 1);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1.1")) == 1.1);
+    assert(_bal_decimal_to_float(_bal_decimal_const("9.0")) == 9);
+    assert(_bal_decimal_to_float(_bal_decimal_const("9.1")) == 9.1);
+    assert(_bal_decimal_to_float(_bal_decimal_const("9.999999999999999999999999999999999")) == 10.0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("9.99999999999999999999999999999999")) == 10.0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("9.9999999999999999999999999999999")) == 10.0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("10.00000000000000000000000000")) == 10.0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("10.00000000000000000000000001")) == 10.0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("10.00000000000000000000000001")) == 10.0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("99.99999999999999999999999999999999")) == 100.0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1e2")) == 1e2);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1.9e2")) == 1.9e2);
+    assert(_bal_decimal_to_float(_bal_decimal_const("9.999999999999999999999999999999999e100")) == 1.0e101);
+    assert(_bal_decimal_to_float(_bal_decimal_const("9999999999999999999999999999999999e100")) == 1.0e134);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1e308")) == 1.0e308);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1e309")) == DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1.7976931348623158e+308")) == DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1.79769313486231571e+308")) == DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1.79769313486231570e+308")) == DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("9.999999999999999999999999999999999E6144")) == DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-1e309")) == -DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-2e309")) == -DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1.7976931348623156e+308")) == 1.7976931348623156e+308);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-1.7976931348623157e+308")) == -1.7976931348623157e+308);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-1.79769313486231571e308")) == -DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-1.7976931348623158e308")) == -DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-9.999999999999999999999999999999999E6144")) == -DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-1.7976931348623156e+309")) == -DBL_MAX);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-1.7976931348623156e+308")) == -1.7976931348623156e+308);
+    assert(_bal_decimal_to_float(_bal_decimal_const("0")) == 0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1e-322")) == 1e-322);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1e-323")) == 1e-323);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1e-324")) == 0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-1e-324")) == 0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("1e-6143")) == 0);
+    assert(_bal_decimal_to_float(_bal_decimal_const("-1e-6143")) == 0);
+}
+
 int main() {
     testConst();
     testAdd();
     testSub();
     testMul();
     testDiv();
+    testDecToFloat();
 }

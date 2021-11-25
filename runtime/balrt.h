@@ -350,6 +350,7 @@ extern TaggedPtrPanicCode _bal_decimal_add(TaggedPtr tp1, TaggedPtr tp2);
 extern TaggedPtrPanicCode _bal_decimal_sub(TaggedPtr tp1, TaggedPtr tp2);
 extern TaggedPtrPanicCode _bal_decimal_mul(TaggedPtr tp1, TaggedPtr tp2);
 extern TaggedPtrPanicCode _bal_decimal_div(TaggedPtr tp1, TaggedPtr tp2);
+extern double _bal_decimal_to_float(TaggedPtr tp);
 
 // Library mangling
 #define BAL_ROOT_NAME(sym) _B04root ## sym
