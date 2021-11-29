@@ -9,6 +9,9 @@ typedef GC decQuad *DecimalPtr;
 // XXX need to investigate DEC_Underflow
 #define DECIMAL_STATUS_FAIL DEC_Errors
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 static TaggedPtrPanicCode finish(decQuad *dq, decContext *cx);
 
 static inline TaggedPtr createDecimal(decQuad *dq) {
@@ -165,6 +168,27 @@ double _bal_decimal_to_float(TaggedPtr tp) {
     char dblStr[DECQUAD_String];
     decQuadToString(taggedToDecQuad(tp), dblStr);
     return strtod(dblStr, NULL);
+}
+
+DecToIntResult _bal_decimal_to_int(TaggedPtr tp) {
+    DecToIntResult res;
+    if (_bal_decimal_cmp(tp, _bal_decimal_const("-9223372036854775808")) == -1 || _bal_decimal_cmp(tp, _bal_decimal_const("9223372036854775807")) == 1) {
+        res.overflow = true;
+        return res;
+    }
+    res.overflow = false;
+    decQuad dQuantized;
+    decQuad dZero;
+    decQuadZero(&dZero);
+    decContext cx;
+    initContext(&cx);
+    decQuadQuantize(&dQuantized, taggedToDecQuad(tp), &dZero, &cx);
+
+    char str[DECQUAD_String];
+    decQuadToString(&dQuantized, str);
+    // It is not needed to handle the max values because it is handled initially.
+    res.val = strtol(str, NULL, 0);
+    return res;
 }
 
 TaggedPtr _bal_decimal_const(const char *decString) {

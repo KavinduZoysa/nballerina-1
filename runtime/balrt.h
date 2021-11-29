@@ -281,6 +281,11 @@ typedef struct {
     PanicCode panicCode;
 } TaggedPtrPanicCode;
 
+typedef struct {
+    int64_t val;
+    bool overflow;
+} DecToIntResult;
+
 #define ALIGN_HEAP 8
 
 // Don't declare functions here if they are balrt_inline.c
@@ -356,6 +361,7 @@ extern TaggedPtrPanicCode _bal_decimal_rem(TaggedPtr tp1, TaggedPtr tp2);
 extern int64_t _bal_decimal_cmp(TaggedPtr tp1, TaggedPtr tp2);
 extern bool _bal_decimal_exact_eq(TaggedPtr tp1, TaggedPtr tp2);
 extern double _bal_decimal_to_float(TaggedPtr tp);
+extern DecToIntResult _bal_decimal_to_int(TaggedPtr tp);
 
 // Library mangling
 #define BAL_ROOT_NAME(sym) _B04root ## sym
