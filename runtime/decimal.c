@@ -9,6 +9,10 @@ typedef GC decQuad *DecimalPtr;
 // XXX need to investigate DEC_Underflow
 #define DECIMAL_STATUS_FAIL DEC_Errors
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+#define INT64_MAX_LEN sizeof(STR(INT64_MIN))
+
 static TaggedPtrPanicCode finish(decQuad *dq, decContext *cx);
 
 static inline TaggedPtr createDecimal(decQuad *dq) {
@@ -173,9 +177,7 @@ TaggedPtr _bal_decimal_from_int(int64_t val) {
         decQuadFromInt32(&d, (int32_t)val);
         return createDecimal(&d);
     }
-    // The INT64_MIN(-9223372036854775808) has the maximum string length.
-    // It has 20 characters. Adding +1 for NULL terminator.
-    char intStr[21];
+    char intStr[INT64_MAX_LEN];
     sprintf(intStr, "%" PRId64, val);
     decContext cx;
     initContext(&cx);
