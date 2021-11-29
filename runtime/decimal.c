@@ -185,6 +185,27 @@ TaggedPtr _bal_decimal_from_int(int64_t val) {
     return createDecimal(&d);
 }
 
+DecToIntResult _bal_decimal_to_int(TaggedPtr tp) {
+    DecToIntResult res;
+    if (_bal_decimal_cmp(tp, _bal_decimal_from_int(INT64_MIN)) == -1 || _bal_decimal_cmp(tp, _bal_decimal_from_int(INT64_MAX)) == 1) {
+        res.overflow = true;
+        return res;
+    }
+    res.overflow = false;
+    decQuad dQuantized;
+    decQuad dZero;
+    decQuadZero(&dZero);
+    decContext cx;
+    initContext(&cx);
+    decQuadQuantize(&dQuantized, taggedToDecQuad(tp), &dZero, &cx);
+
+    char str[DECQUAD_String];
+    decQuadToString(&dQuantized, str);
+    // It is not needed to handle the max values because it is handled initially.
+    res.val = strtol(str, NULL, 0);
+    return res;
+}
+
 TaggedPtr _bal_decimal_const(const char *decString) {
     decContext cx;
     initContext(&cx);
