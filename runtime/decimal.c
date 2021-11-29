@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "balrt.h"
 #include "third-party/decNumber/decQuad.h"
 
@@ -187,22 +188,30 @@ TaggedPtr _bal_decimal_from_int(int64_t val) {
 
 DecToIntResult _bal_decimal_to_int(TaggedPtr tp) {
     DecToIntResult res;
-    if (_bal_decimal_cmp(tp, _bal_decimal_from_int(INT64_MIN)) == -1 || _bal_decimal_cmp(tp, _bal_decimal_from_int(INT64_MAX)) == 1) {
-        res.overflow = true;
-        return res;
-    }
-    res.overflow = false;
     decQuad dQuantized;
     decQuad dZero;
     decQuadZero(&dZero);
     decContext cx;
     initContext(&cx);
     decQuadQuantize(&dQuantized, taggedToDecQuad(tp), &dZero, &cx);
+    if (cx.status & DEC_Invalid_operation) {
+        // The invalid operation flag is raised 
+        // when 34 digits is not enough to represent quantized decQuad.
+        // This situation can be considered as overflow scenario.
+        res.overflow = true;
+        return res;
+    }
 
     char str[DECQUAD_String];
     decQuadToString(&dQuantized, str);
-    // It is not needed to handle the max values because it is handled initially.
-    res.val = strtol(str, NULL, 0);
+    errno = 0;
+    int64_t val = strtol(str, NULL, 0);
+    if (errno == ERANGE) {
+        res.overflow = true;
+        return res;
+    }
+    res.overflow = false;
+    res.val = val;
     return res;
 }
 
