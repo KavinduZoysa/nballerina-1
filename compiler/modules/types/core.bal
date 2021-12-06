@@ -1007,7 +1007,7 @@ public function split(SemType t) returns SplitSemType  {
     }
 }
 
-public type SingleValue ()|boolean|int|float|string;
+public type SingleValue ()|boolean|int|float|decimal|string;
 
 // JBUG #34320, this issue is related to type narrowing.
 // After this issue is fixed, `OptSingleValue` should be changed as shown below.
