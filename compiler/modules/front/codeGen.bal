@@ -1254,6 +1254,11 @@ function codeGenArithmeticBinaryExpr(CodeGenContext cx, bir:BasicBlock bb, bir:A
         bir:FloatArithmeticBinaryInsn insn = { op, pos, operands: pair[1], result };
         bb.insns.push(insn);
     }
+    else if pair is DecimalOperandPair {
+        result = cx.createTmpRegister(t:DECIMAL, pos);
+        bir:DecimalArithmeticBinaryInsn insn = { op, pos, operands: pair[1], result };
+        bb.insns.push(insn);
+    }    
     else if pair is StringOperandPair && op == "+" {
         result = cx.createTmpRegister(t:STRING, pos);
         bir:StringConcatInsn insn = { operands: pair[1], result, pos };
@@ -1827,10 +1832,11 @@ type NilOperand ()|bir:Register;
 type BooleanOperandPair readonly & ["boolean", [bir:BooleanOperand, bir:BooleanOperand]];
 type IntOperandPair readonly & ["int", [bir:IntOperand, bir:IntOperand]];
 type FloatOperandPair readonly & ["float", [bir:FloatOperand, bir:FloatOperand]];
+type DecimalOperandPair readonly & ["decimal", [bir:DecimalOperand, bir:DecimalOperand]];
 type StringOperandPair readonly & ["string", [bir:StringOperand, bir:StringOperand]];
 type NilOperandPair readonly & ["nil", [NilOperand, NilOperand]];
 
-type TypedOperandPair BooleanOperandPair|IntOperandPair|FloatOperandPair|StringOperandPair|NilOperandPair;
+type TypedOperandPair BooleanOperandPair|IntOperandPair|DecimalOperandPair|FloatOperandPair|StringOperandPair|NilOperandPair;
 
 // XXX should use t:UT_* instead of strings here (like the ordering stuff)
 type TypedOperand readonly & (["array", bir:Register]
@@ -1851,6 +1857,9 @@ function typedOperandPair(bir:Operand lhs, bir:Operand rhs) returns TypedOperand
     }
     if l is ["float", bir:FloatOperand] && r is ["float", bir:FloatOperand] {
         return ["float", [l[1], r[1]]];
+    }
+    if l is ["decimal", bir:DecimalOperand] && r is ["decimal", bir:DecimalOperand] {
+        return ["decimal", [l[1], r[1]]];
     }
     if l is ["string", bir:StringOperand] && r is ["string", bir:StringOperand] {
         return ["string", [l[1], r[1]]];
@@ -1877,6 +1886,9 @@ function typedOperand(bir:Operand operand) returns TypedOperand? {
         }
         else if t:isSubtypeSimple(operand.semType, t:FLOAT) {
             return ["float", operand];
+        }
+        else if t:isSubtypeSimple(operand.semType, t:DECIMAL) {
+            return ["decimal", operand];
         }
         else if t:isSubtypeSimple(operand.semType, t:STRING) {
             return ["string", operand];
