@@ -600,16 +600,6 @@ function intFromLiteral(FoldContext cx, s:IntLiteralExpr expr) returns int|FoldE
     return i;
 }
 
-// Even if the integer literal is parsed correctly,
-// overflow should throw an error.
-function intFromLiteral(FoldContext cx, s:IntLiteralExpr expr) returns int|FoldError {
-    int|error i = s:intFromIntLiteral(expr.base, expr.digits);
-    if i is error {
-        return cx.semanticErr("invalid int literal", expr.startPos);
-    }
-    return i;
-}
-
 function intArithmeticEval(s:BinaryArithmeticOp op, int left, int right) returns int  {
     match op {
         "+" => {
