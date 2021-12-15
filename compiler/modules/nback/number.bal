@@ -12,6 +12,15 @@ final RuntimeFunction floatToIntFunction = {
     attrs: ["nounwind", "readnone", "speculatable", "willreturn"]
 };
 
+final RuntimeFunction decimalNegateFunction = {
+    name: "decimal_neg",
+    ty: {
+        returnType: LLVM_TAGGED_PTR,
+        paramTypes: [LLVM_TAGGED_PTR]
+    },
+    attrs: ["readnone"]
+};
+
 function buildArithmeticBinary(llvm:Builder builder, Scaffold scaffold, bir:IntArithmeticBinaryInsn insn) {
     llvm:IntrinsicFunctionName? intrinsicName = buildBinaryIntIntrinsic(insn.op);
     llvm:Value lhs = buildInt(builder, scaffold, insn.operands[0]);
@@ -121,6 +130,12 @@ function buildFloatNegate(llvm:Builder builder, Scaffold scaffold, bir:FloatNega
     llvm:Value operand = buildFloat(builder, scaffold, insn.operand);
     llvm:Value result = builder.fNeg(operand);
     buildStoreFloat(builder, scaffold, result, insn.result);
+}
+
+function buildDecimalNegate(llvm:Builder builder, Scaffold scaffold, bir:DecimalNegateInsn insn) {
+    llvm:Value operand = buildDecimal(builder, scaffold, insn.operand);
+    llvm:Value result = <llvm:Value>builder.call(scaffold.getRuntimeFunctionDecl(decimalNegateFunction), [operand]);
+    buildStoreDecimal(builder, scaffold, result, insn.result);
 }
 
 final readonly & map<llvm:IntBitwiseOp> binaryBitwiseOp = {

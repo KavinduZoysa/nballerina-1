@@ -161,6 +161,7 @@ public enum InsnName {
     INSN_FLOAT_ARITHMETIC_BINARY,
     INSN_FLOAT_NEGATE,
     INSN_DECIMAL_ARITHMETIC_BINARY,
+    INSN_DECIMAL_NEGATE,
     INSN_CONVERT_TO_INT,
     INSN_CONVERT_TO_FLOAT,
     INSN_COMPARE,
@@ -202,7 +203,7 @@ public type InsnBase record {
 public type Insn 
     IntArithmeticBinaryInsn|IntNoPanicArithmeticBinaryInsn|IntBitwiseBinaryInsn
     |FloatArithmeticBinaryInsn|FloatNegateInsn
-    |DecimalArithmeticBinaryInsn
+    |DecimalArithmeticBinaryInsn|DecimalNegateInsn
     |ConvertToIntInsn|ConvertToFloatInsn
     |BooleanNotInsn|CompareInsn|EqualityInsn
     |ListConstructInsn|ListGetInsn|ListSetInsn
@@ -289,6 +290,13 @@ public type DecimalArithmeticBinaryInsn readonly & record {|
 public type FloatNegateInsn readonly & record {|
     *InsnBase;
     INSN_FLOAT_NEGATE name = INSN_FLOAT_NEGATE;
+    Register result;
+    Register operand;
+|};
+
+public type DecimalNegateInsn readonly & record {|
+    *InsnBase;
+    INSN_DECIMAL_NEGATE name = INSN_DECIMAL_NEGATE;
     Register result;
     Register operand;
 |};

@@ -1074,6 +1074,10 @@ function codeGenExpr(CodeGenContext cx, bir:BasicBlock bb, Environment env, s:Ex
                 result = cx.createTmpRegister(t:FLOAT, pos);
                 insn = <bir:FloatNegateInsn> { operand: <bir:Register>typed[1], result, pos };
             }
+            else if typed is ["decimal", bir:DecimalOperand] {
+                result = cx.createTmpRegister(t:DECIMAL, pos);
+                insn = <bir:DecimalNegateInsn> { operand: <bir:Register>typed[1], result, pos };
+            }
             else {
                 return cx.semanticErr(`operand of ${"-"} must be int or float`, pos);
             }
